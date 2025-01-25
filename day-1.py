@@ -11,9 +11,9 @@ def parseInputStringToIntList(longString: str) -> dict[str, list[int]]:
             continue
         numTuple = i.split()
         if len(numTuple) != 2:
-            raise ValueError("The input string is not in the correct format")
+            raise ValueError("The input string parses to more than 2 items")
         if not numTuple[0].isdigit() or not numTuple[1].isdigit():
-            raise ValueError("The input string is not in the correct format")
+            raise ValueError("The input string contains non-numeric values")
         list1.append(int(numTuple[0]))
         list2.append(int(numTuple[1]))
     list1.sort()
@@ -38,7 +38,7 @@ def getListDifference(listTuple: dict[str, list[int]]) -> int:
 getListDifference(parseInputStringToIntList(longString))
 
 
-def createDuplicateCountDict(listTwo: list[int]) -> dict[int, int]:
+def createDictWithDuplicateCount(listTwo: list[int]) -> dict[int, int]:
     countedDuplicates = {}
     for i in listTwo:
         if i in countedDuplicates:
@@ -60,7 +60,7 @@ def getSimilarityScore(listOne: list[int], countedDuplicates: dict[int, int]) ->
 def getSimilarityScoreFromInputString(longString: str) -> int:
     parsedInput = parseInputStringToIntList(longString)
     listOne, listTwo = parsedInput.values()
-    countedDuplicates = createDuplicateCountDict(listTwo)
+    countedDuplicates = createDictWithDuplicateCount(listTwo)
     return getSimilarityScore(listOne, countedDuplicates)
 
 
