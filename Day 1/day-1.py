@@ -2,26 +2,33 @@ import requests
 from day_1_puzzel_input import *
 
 
+def errorHandler(list: list, index: int) -> bool:
+    errorPrefix = f"The list:{list} at index: {index}"
+    if len(list) == 0:
+        raise ValueError(f"{errorPrefix} is empty")
+    if not all(i.isnumeric() for i in list):
+        raise ValueError(f"{errorPrefix} contains non-numeric values")
+    if not all(int(i) < 10**6 for i in list):
+        raise ValueError(f"{errorPrefix} contains values greater than 10^6")
+    if len(list) > 2:
+        raise ValueError(f"{errorPrefix} contains more than 2 items")
+    return True
+
+
 def parseInputStringToIntList(longString: str) -> dict[str, list[int]]:
     numsList: list[str] = longString.split("\n")
     list1: list[int] = []
     list2: list[int] = []
-    for i in numsList:
-        if i == "":
+    for index, value in enumerate(numsList):
+        if value == "":
             continue
-        numTuple = i.split()
-        if len(numTuple) != 2:
-            raise ValueError("The input string parses to more than 2 items")
-        if not numTuple[0].isdigit() or not numTuple[1].isdigit():
-            raise ValueError("The input string contains non-numeric values")
+        numTuple = value.split()
+        errorHandler(numTuple, index)
         list1.append(int(numTuple[0]))
         list2.append(int(numTuple[1]))
     list1.sort()
     list2.sort()
     return {"listOne": list1, "listTwo": list2}
-
-
-parseInputStringToIntList(longString)
 
 
 def getListDifference(listTuple: dict[str, list[int]]) -> int:
