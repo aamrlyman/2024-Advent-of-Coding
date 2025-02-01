@@ -33,7 +33,7 @@ test_list2 = [
     ],
 )
 def test_get_safe_count(sublist, expected):
-    assert get_safe_count(sublist, isSafeTrend) == expected
+    assert get_safe_count(sublist) == expected
 
 
 @pytest.mark.parametrize(
@@ -45,6 +45,7 @@ def test_get_safe_count(sublist, expected):
         ([1, 3, 2, 4, 5], True),
         ([8, 6, 4, 4, 1], True),
         ([1, 3, 6, 7, 9], True),
+        ([], True),
     ],
 )
 def test_is_stepping_by_3_with_recursion(sublist, expected):
@@ -54,4 +55,4 @@ def test_is_stepping_by_3_with_recursion(sublist, expected):
 
 @pytest.mark.parametrize("sublist, expected", [(test_list1, 4), (test_list2, 10)])
 def test_get_safe_count_with_retries(sublist, expected):
-    assert get_safe_count(sublist, is_stepping_by_3_with_recursion) == expected
+    assert get_safe_count(sublist, 1) == expected
