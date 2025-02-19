@@ -18,11 +18,9 @@ def get_safe_count(two_deep_list: list[list[int]], limit: int = 0) -> int:
 
 def is_stepping_by_3_with_recursion(sublist: list[int], limit: int = 0):
     retries = 0
-    if changingBy3orLess(sublist, isIncreasing=True, retries=retries, limit=limit):
-        return True
-    if changingBy3orLess(sublist, isIncreasing=False, retries=retries, limit=limit):
-        return True
-    return False
+    return changingBy3orLess(
+        sublist, isIncreasing=True, retries=retries, limit=limit
+    ) or changingBy3orLess(sublist, isIncreasing=False, retries=retries, limit=limit)
 
 
 def changingBy3orLess(
