@@ -1,4 +1,4 @@
-thistring = """
+testCase1 = """
 ....XXMAS.
 .SAMXMS...
 ...S..A...
@@ -10,39 +10,27 @@ S.S.S.S.SS
 ..M.M.M.MM
 .X.X.XMASX
 """
+testCase2 = """"" 
+XMAS
+.M..
+..A.
+...S
+"""
 
 
-def stringToList(longString) -> list[str]:
-    return list(filter(lambda string: string != "", longString.split("\n")))
+class WordSearch:
+    def __init__(self, longString) -> None:
+        self.wordSearch: list[str] = list(
+            filter(lambda string: string != "", longString.split("\n"))
+        )
+        self.height: int = len(self.wordSearch)
+        self.width: int = len(self.wordSearch[0])
 
 
-def get_strings_up():
-    pass
+def create_permutations():
+    amplitudes = [-1, 0, 1]
+    return [(i, j) for i in amplitudes for j in amplitudes if i != 0 or j != 0]
 
 
-def get_strings_down():
-    pass
-
-
-def get_strings_right():
-    pass
-
-
-def get_strings_left():
-    pass
-
-
-def diagonal_up_right():
-    pass
-
-
-def diagonal_up_left():
-    pass
-
-
-def diagonal_down_right():
-    pass
-
-
-def diagonal_down_left():
-    pass
+def getAllPoints(width, height):
+    points = [(x, y) for x in range(width) for y in range(height)]
