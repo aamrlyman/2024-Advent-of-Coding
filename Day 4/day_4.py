@@ -160,54 +160,46 @@ class WordSearch:
         self.lines = [line for line in longString.splitlines() if line.strip()]
         self.height: int = len(self.lines)
         self.width: int = len(self.lines[0])
+        self.points: list[tuple[int, int]] = [
+            (x, y) for x in range(self.width) for y in range(self.height)
+        ]
+        amplitudes = [-1, 0, 1]
+        self.vectors = [
+            (i, j) for i in amplitudes for j in amplitudes if i != 0 or j != 0
+        ]
 
 
-def create_vectors():
-    amplitudes = [-1, 0, 1]
-    return [(i, j) for i in amplitudes for j in amplitudes if i != 0 or j != 0]
-
-
-def getAllPoints(width, height):
-    return [(x, y) for x in range(width) for y in range(height)]
+def get_string_from_vector(
+    points: tuple[int, int],
+    vectors: tuple[int, int],
+    ws: WordSearch,
+    stringLimit: int,
+):
+    tempx = points[0]
+    tempy = points[1]
+    newString = ""
+    for _ in range(stringLimit):
+        if tempx > ws.width - 1 or tempy > ws.height - 1 or tempx < 0 or tempy < 0:
+            break
+        newString += ws.lines[tempx][tempy]
+        tempx += vectors[0]
+        tempy += vectors[1]
+    return newString
 
 
 def get_four_char_strings(
-    points: list[tuple[int, int]],
-    vectors: list[tuple[int, int]],
-    wordsearch: WordSearch,
-    searchString: str = "XMAS",
+    ws: WordSearch,
+    stringLimit: int = 4,
 ):
     four_Char_strings = []
-    for [x, y] in points:
-        for [i, j] in vectors:
-            newString = ""
-            tempx = x
-            tempy = y
-            for _ in range(len(searchString)):
-                if (
-                    tempx > wordsearch.width - 1
-                    or tempy > wordsearch.height - 1
-                    or tempx < 0
-                    or tempy < 0
-                ):
-                    break
-                newString += wordsearch.lines[tempx][tempy]
-                tempx += i
-                tempy += j
-            if len(newString) == len(searchString):
+    for [x, y] in ws.points:
+        for [i, j] in ws.vectors:
+            newString = get_string_from_vector((x, y), (i, j), ws, stringLimit)
+            if len(newString) == stringLimit:
                 four_Char_strings.append(newString)
 
     return four_Char_strings
 
 
-print("Points: ", getAllPoints(4, 4))
-print("Vectors: ", create_vectors())
-
-wordsearch = WordSearch(testCase2)
-fours = get_four_char_strings(
-    getAllPoints(wordsearch.width, wordsearch.height),
-    create_vectors(),
-    WordSearch(testCase2),
-)
-print(fours)
+fours = get_four_char_strings(WordSearch(testCase2))
 print(fours.count("XMAS"))
