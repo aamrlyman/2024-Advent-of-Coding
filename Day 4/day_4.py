@@ -153,53 +153,57 @@ MAMMMMMAXMASMMMSMMSMSSMMMMSAMASMMMSASXSSMMSASAMMAMXSASAXXAAXAMXSASXMSSSMSASMSAMM
 SXSAAXSASXXSASAMXMSAAMAAMMMXMAXMAMSAAAXMAXSAMASMASAMASMSXXMSAMXMMSAAMAAMSXXAMMMAAMASMSASMMMSAMASXSMASMMSAXSASXMASAAMAMXAAXMAXMAMMAMXAAAAASAM
 SASMSMMSAMXSAMXSMXMMMSSMSXSSMSSSXMMXMAMMMMMAMAMXXSAMXMAXXXXSAMXSXSMMMMMMXXMSMSSMSSXMMMAMXMMSAMXXAXSMMXXMMMMASXSSMMSMSMSSSMSMMASXSMSMMMSMMMSM
 """
+from typing import Iterator
+from itertools import zip_longest, islice
 
 
 class WordSearch:
     def __init__(self, longString) -> None:
-        self.lines = [line for line in longString.splitlines() if line.strip()]
-        self.height: int = len(self.lines)
-        self.width: int = len(self.lines[0])
-        self.points: list[tuple[int, int]] = [
-            (x, y) for x in range(self.width) for y in range(self.height)
-        ]
+        self._lines = [line for line in longString.splitlines() if line.strip()]
+        self._height: int = len(self._lines)
+        self._width: int = len(self._lines[0])
+        self._points: Iterator[tuple[int, int]] = (
+            (x, y) for x in range(self._width) for y in range(self._height)
+        )
         amplitudes = [-1, 0, 1]
         self.vectors = [
             (i, j) for i in amplitudes for j in amplitudes if i != 0 or j != 0
         ]
 
+    def getLines(self):
+        return iter(self._lines)
 
-def get_string_from_vector(
-    points: tuple[int, int],
-    vectors: tuple[int, int],
-    ws: WordSearch,
-    stringLimit: int,
-):
-    tempx = points[0]
-    tempy = points[1]
-    newString = ""
-    for _ in range(stringLimit):
-        if tempx > ws.width - 1 or tempy > ws.height - 1 or tempx < 0 or tempy < 0:
-            break
-        newString += ws.lines[tempx][tempy]
-        tempx += vectors[0]
-        tempy += vectors[1]
-    return newString
+    def get_string_with_vector(
+        self, point: tuple[int, int], vector: tuple[int, int]
+    ) -> Iterator[str]:
+        [tempx, tempy] = point
+        [i, j] = vector
+        while self.isInRange(tempx, tempy):
+            yield self._lines[tempx][tempy]
+            tempx += i
+            tempy += j
 
+    def get_strings(self) -> Iterator[Iterator[str]]:
+        return (
+            self.get_string_with_vector((x, y), (i, j))
+            for [x, y] in self._points
+            for [i, j] in self.vectors
+        )
 
-def get_four_char_strings(
-    ws: WordSearch,
-    stringLimit: int = 4,
-):
-    four_Char_strings = []
-    for [x, y] in ws.points:
-        for [i, j] in ws.vectors:
-            newString = get_string_from_vector((x, y), (i, j), ws, stringLimit)
-            if len(newString) == stringLimit:
-                four_Char_strings.append(newString)
-
-    return four_Char_strings
+    def isInRange(self, x: int, y: int):
+        return 0 <= x < self._width and 0 <= y < self._height
 
 
-fours = get_four_char_strings(WordSearch(testCase2))
-print(fours.count("XMAS"))
+strings = WordSearch(testCase2).get_strings()
+wordtomatch = "XMAS"
+stringLimit = len(wordtomatch)
+print(
+    sum(
+        1
+        for word in strings
+        if all(
+            x == y for x, y in zip_longest(islice(word, stringLimit), iter(wordtomatch))
+        )
+    ),
+)
+# 2401
