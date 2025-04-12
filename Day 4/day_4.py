@@ -193,17 +193,22 @@ class WordSearch:
     def isInRange(self, x: int, y: int):
         return 0 <= x < self._width and 0 <= y < self._height
 
-
-strings = WordSearch(testCase2).get_strings()
-wordtomatch = "XMAS"
-stringLimit = len(wordtomatch)
-print(
-    sum(
-        1
-        for word in strings
-        if all(
-            x == y for x, y in zip_longest(islice(word, stringLimit), iter(wordtomatch))
+    def get_word_count(self, word_to_match: str):
+        strings = self.get_strings()
+        return (
+            sum(
+                1
+                for word in strings
+                if all(
+                    x == y
+                    for x, y in zip_longest(
+                        islice(word, len(word_to_match)), iter(word_to_match)
+                    )
+                )
+            ),
         )
-    ),
-)
-# 2401
+
+
+answer = WordSearch(testCase2).get_word_count("XMAS")
+print(answer)
+# 2401s
