@@ -1,17 +1,4 @@
-testCase1 = """
-....XXMAS.
-.SAMXMS...
-...S..A...
-..A.A.MS.X
-XMASAMX.MM
-X.....XA.A
-S.S.S.S.SS
-.A.A.A.A.A
-..M.M.M.MM
-.X.X.XMASX
-"""
-
-testCase2 = """
+mainTestCase = """
 MASAMXMSSXXMAMXXMXMASXMASXMMSMSMMMAXMASASMMSSMSXAXMASMMSMMMSSMSASMSSSSMSMSMXXMXMAXAMXMSMSSXSAMXMSSXSXSXMASXMSASXMMXSXMSSSSSXSAMMAMXSXXMAAXSA
 MASMMXMASAXASMSMMMSAMXSMSAMXAAAAAXAMXASXAMAAAAMMSMMMMMASXAAAAMMAMAMMASAAAAXMXMSSSSSSMMSAMAXAXXSMAMSAMXASAXXASAMXASAMAXXMASAAAMAMAXXMASXSXSXS
 MMXAXMMMSXMAMAAXAAXAAAXXSMMSMSMSMXAXMXSMMMMSSMXAMXAAXMAMMMMSSMMAMAMMAMMMMMXSAAXAAMMAXXSAMXMSMAXMAMSMSSXMASMMMSXSXMAXMMSMMMMMMSASMSXMAMAXXSAM
@@ -155,6 +142,7 @@ SASMSMMSAMXSAMXSMXMMMSSMSXSSMSSSXMMXMAMMMMMAMAMXXSAMXMAXXXXSAMXSXSMMMMMMXXMSMSSM
 """
 from typing import Iterator
 from itertools import zip_longest, islice
+from collections import defaultdict
 
 
 class WordSearch:
@@ -166,49 +154,110 @@ class WordSearch:
             (x, y) for x in range(self._width) for y in range(self._height)
         )
         amplitudes = [-1, 0, 1]
-        self.vectors = [
+        self.all_vectors = [
             (i, j) for i in amplitudes for j in amplitudes if i != 0 or j != 0
         ]
+        self.diagonalsOnly = [
+            (i, j) for i in amplitudes for j in amplitudes if i != 0 and j != 0
+        ]
 
-    def getLines(self):
-        return iter(self._lines)
+    def get_word_count(self, word_to_match: str):
+        strings = self.get_strings()
+        return sum(
+            1
+            for word in strings
+            if all(
+                x == y
+                for x, y in zip_longest(
+                    islice((char for char, _, _ in word), len(word_to_match)),
+                    iter(word_to_match),
+                )
+            )
+        )
 
-    def get_string_with_vector(
-        self, point: tuple[int, int], vector: tuple[int, int]
-    ) -> Iterator[str]:
-        [tempx, tempy] = point
-        [i, j] = vector
-        while self.isInRange(tempx, tempy):
-            yield self._lines[tempx][tempy]
-            tempx += i
-            tempy += j
+    def get_mas_list(self, word_to_match):
+        strings_iterable = self.get_strings(all_vectors=False)
+        matches = []
 
-    def get_strings(self) -> Iterator[Iterator[str]]:
+        for word in strings_iterable:
+            word_triplet = []
+            for char_and_coordinates in word:
+                word_triplet.append(char_and_coordinates)
+                if len(word_triplet) == len(word_to_match):
+                    break
+
+            if len(word_triplet) != len(word_to_match):
+                continue
+
+            chars = [char for char, _, _ in word_triplet]
+            if chars == list(word_to_match):
+                matches.append(word_triplet)
+
+        return matches
+
+    def count_xmas(self):
+        mas_lists = self.get_mas_list("MAS")
+        middle_map = defaultdict(list)
+        for triple in mas_lists:
+            if len(triple) != 3:
+                continue
+            middle_char, middle_x, middle_y = triple[1]
+            middle_map[(middle_x, middle_y)].append(triple)
+
+        # print(middle_map.values())
+        return sum(1 for v in middle_map.values() if len(v) >= 2)
+
+    def get_strings(self, all_vectors=True) -> Iterator[Iterator[tuple[str, int, int]]]:
+        vectors = self.all_vectors if all_vectors else self.diagonalsOnly
         return (
             self.get_string_with_vector((x, y), (i, j))
             for [x, y] in self._points
-            for [i, j] in self.vectors
+            for [i, j] in vectors
         )
+
+    def get_string_with_vector(
+        self, point: tuple[int, int], vector: tuple[int, int]
+    ) -> Iterator[tuple[str, int, int]]:
+        [tempy, tempx] = point
+        [i, j] = vector
+        while self.isInRange(tempx, tempy):
+            yield self._lines[tempy][tempx], tempx, tempy
+            tempx += i
+            tempy += j
 
     def isInRange(self, x: int, y: int):
         return 0 <= x < self._width and 0 <= y < self._height
 
-    def get_word_count(self, word_to_match: str):
-        strings = self.get_strings()
-        return (
-            sum(
-                1
-                for word in strings
-                if all(
-                    x == y
-                    for x, y in zip_longest(
-                        islice(word, len(word_to_match)), iter(word_to_match)
-                    )
-                )
-            ),
-        )
+
+testCase3 = """
+M.S
+.A.
+M.S"""
+simpleCase = WordSearch(testCase3).count_xmas()
+
+testCase1 = """
+.M.S......
+..A..MSMS.
+.M.S.MAA..
+..A.ASMSM.
+.M.S.M....
+..........
+S.S.S.S.S.
+.A.A.A.A..
+M.M.M.M.M.
+..........
+"""
 
 
-answer = WordSearch(testCase2).get_word_count("XMAS")
-print(answer)
+# testAnswer2 = WordSearch(testCase1).get_mas_list("MAS")
+# answer = WordSearch(mainTestCase).get_word_count("XMAS")
+# answer1 = WordSearch(testCase2).get_mas_cout("MAS")
+
+# print("answer: ", answer)
+MainAnswer = WordSearch(mainTestCase).count_xmas()
+print("Main Test Case: ", MainAnswer)
+providedExample = WordSearch(testCase1).count_xmas()
+print("Provided Example: ", providedExample)
+# print(testAnswer2)
 # 2401s
+print("simple Test Case: ", simpleCase)
