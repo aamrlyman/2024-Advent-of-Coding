@@ -1,4 +1,4 @@
-mainTestCase = """
+const exampleCase = `
 MASAMXMSSXXMAMXXMXMASXMASXMMSMSMMMAXMASASMMSSMSXAXMASMMSMMMSSMSASMSSSSMSMSMXXMXMAXAMXMSMSSXSAMXMSSXSXSXMASXMSASXMMXSXMSSSSSXSAMMAMXSXXMAAXSA
 MASMMXMASAXASMSMMMSAMXSMSAMXAAAAAXAMXASXAMAAAAMMSMMMMMASXAAAAMMAMAMMASAAAAXMXMSSSSSSMMSAMAXAXXSMAMSAMXASAXXASAMXASAMAXXMASAAAMAMAXXMASXSXSXS
 MMXAXMMMSXMAMAAXAAXAAAXXSMMSMSMSMXAXMXSMMMMSSMXAMXAAXMAMMMMSSMMAMAMMAMMMMMXSAAXAAMMAXXSAMXMSMAXMAMSMSSXMASMMMSXSXMAXMMSMMMMMMSASMSXMAMAXXSAM
@@ -139,124 +139,100 @@ MXMAXAMSMMMMXSAXAXSAAXXAAMSASAMXSAMXMAXAAMSXMMSMASXXAMMMXMASMSMMAXXMMMAAXXMXAXMA
 MAMMMMMAXMASMMMSMMSMSSMMMMSAMASMMMSASXSSMMSASAMMAMXSASAXXAAXAMXSASXMSSSMSASMSAMMMSMMXSASAAASAMXXXMMAMXASMXMMSASMMSSSMSMSMMSMMMMMMAMSMSSSMSXS
 SXSAAXSASXXSASAMXMSAAMAAMMMXMAXMAMSAAAXMAXSAMASMASAMASMSXXMSAMXMMSAAMAAMSXXAMMMAAMASMSASMMMSAMASXSMASMMSAXSASXMASAAMAMXAAXMAXMAMMAMXAAAAASAM
 SASMSMMSAMXSAMXSMXMMMSSMSXSSMSSSXMMXMAMMMMMAMAMXXSAMXMAXXXXSAMXSXSMMMMMMXXMSMSSMSSXMMMAMXMMSAMXXAXSMMXXMMMMASXSSMMSMSMSSSMSMMASXSMSMMMSMMMSM
-"""
-from typing import Iterator
-from itertools import zip_longest, islice
-from collections import defaultdict
+`;
 
+function parseWordSearch(string) {
+  const lines = string.trim().split("\n");
+  const height = lines.length;
+  const width = lines[0].length;
+  if (height != width) {
+    throw new Error(
+      `Input string height: ${height} was not the same as width: ${width}.`
+    );
+  }
+  return {
+    grid: lines,
+    width: width,
+    height: height,
+    points: getPoints(height, width),
+    vectors: getVectors(),
+  };
+}
 
-class WordSearch:
-    def __init__(self, longString) -> None:
-        self._lines = [line for line in longString.splitlines() if line.strip()]
-        self._height: int = len(self._lines)
-        self._width: int = len(self._lines[0])
-        self._points: Iterator[tuple[int, int]] = (
-            (x, y) for x in range(self._width) for y in range(self._height)
-        )
-        amplitudes = [-1, 0, 1]
-        self.all_vectors = [
-            (i, j) for i in amplitudes for j in amplitudes if i != 0 or j != 0
-        ]
-        self.diagonalsOnly = [
-            (i, j) for i in amplitudes for j in amplitudes if i != 0 and j != 0
-        ]
+function getPoints(height, width) {
+  const points = [];
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      points.push([x, y]);
+    }
+  }
+  return points;
+}
 
-    def get_word_count(self, word_to_match: str):
-        strings = self.get_strings()
-        return sum(
-            1
-            for word in strings
-            if all(
-                x == y
-                for x, y in zip_longest(
-                    islice((char for char, _, _ in word), len(word_to_match)),
-                    iter(word_to_match),
-                )
-            )
-        )
+function getVectors(diagonalsOnly) {
+  const amplitudes = diagonalsOnly ? [1, -1] : [1, -1, 0];
+  const vectors = [];
+  for (const i of amplitudes) {
+    for (const j of amplitudes) {
+      if (i != 0 || j != 0) {
+        vectors.push([i, j]);
+      }
+    }
+  }
+  return vectors;
+}
 
-    def get_mas_list(self, word_to_match):
-        strings_iterable = self.get_strings(all_vectors=False)
-        matches = []
+function getStrings(stringToMatch, wordSearch) {
+  const ws = wordSearch;
+  const matches = [];
+  for (const point of ws.points) {
+    for (const vector of ws.vectors) {
+      const params = {
+        point: point,
+        vector: vector,
+        wordSearch: ws,
+        stringLength: stringToMatch.length,
+      };
+      const stringData = getCharsAndPointsWithVector(params);
+      if (stringData.length === stringToMatch.length) matches.push(stringData);
+    }
+  }
+  return matches;
+}
 
-        for word in strings_iterable:
-            word_triplet = []
-            for char_and_coordinates in word:
-                word_triplet.append(char_and_coordinates)
-                if len(word_triplet) == len(word_to_match):
-                    break
+function getCharsAndPointsWithVector({
+  point,
+  vector,
+  wordSearch,
+  stringLength,
+}) {
+  const stringData = [];
+  let [x, y] = point;
+  let [i, j] = vector;
+  while (isInRange([x, y], wordSearch) & (stringData.length < stringLength)) {
+    const char = wordSearch.grid[y][x];
+    stringData.push([char, x, y]);
+    x += i;
+    y += j;
+  }
+  return stringData;
+}
 
-            if len(word_triplet) != len(word_to_match):
-                continue
+function isInRange(point, wordSearch) {
+  const [x, y] = point;
+  return (
+    (x < wordSearch.width) & (x >= 0) & ((y < wordSearch.height) & (y >= 0))
+  );
+}
 
-            chars = [char for char, _, _ in word_triplet]
-            if chars == list(word_to_match):
-                matches.append(word_triplet)
+function filterStringMatches(stringList, stringToMatch) {
+  return stringList
+    .map((charsAndPoints) =>
+      charsAndPoints.map((charAndPoint) => charAndPoint[0]).join("")
+    )
+    .filter((string) => string === stringToMatch);
+}
+const wordsearch = parseWordSearch(exampleCase);
+const totalXmas = getStrings("XMAS", wordsearch);
 
-        return matches
-
-    def count_xmas(self):
-        mas_lists = self.get_mas_list("MAS")
-        middle_map = defaultdict(list)
-        for triple in mas_lists:
-            if len(triple) != 3:
-                continue
-            middle_char, middle_x, middle_y = triple[1]
-            middle_map[(middle_x, middle_y)].append(triple)
-
-        return sum(1 for v in middle_map.values() if len(v) >= 2)
-
-    def get_strings(self, all_vectors=True) -> Iterator[Iterator[tuple[str, int, int]]]:
-        vectors = self.all_vectors if all_vectors else self.diagonalsOnly
-        return (
-            self.get_string_with_vector((x, y), (i, j))
-            for [x, y] in self._points
-            for [i, j] in vectors
-        )
-
-    def get_string_with_vector(
-        self, point: tuple[int, int], vector: tuple[int, int]
-    ) -> Iterator[tuple[str, int, int]]:
-        [tempy, tempx] = point
-        [i, j] = vector
-        while self.isInRange(tempx, tempy):
-            yield self._lines[tempy][tempx], tempx, tempy
-            tempx += i
-            tempy += j
-
-    def isInRange(self, x: int, y: int):
-        return 0 <= x < self._width and 0 <= y < self._height
-
-
-testCase3 = """
-M.S
-.A.
-M.S"""
-simpleCase = WordSearch(testCase3).count_xmas()
-
-testCase1 = """
-.M.S......
-..A..MSMS.
-.M.S.MAA..
-..A.ASMSM.
-.M.S.M....
-..........
-S.S.S.S.S.
-.A.A.A.A..
-M.M.M.M.M.
-..........
-"""
-
-
-# testAnswer2 = WordSearch(testCase1).get_mas_list("MAS")
-# answer = WordSearch(mainTestCase).get_word_count("XMAS")
-# answer1 = WordSearch(testCase2).get_mas_cout("MAS")
-
-# print("answer: ", answer)
-MainAnswer = WordSearch(mainTestCase).count_xmas()
-print("Main Test Case: ", MainAnswer)
-providedExample = WordSearch(testCase1).count_xmas()
-print("Provided Example: ", providedExample)
-# print(testAnswer2)
-# 2401s
-print("simple Test Case: ", simpleCase)
+console.log("output:", filterStringMatches(totalXmas, "XMAS").length);
