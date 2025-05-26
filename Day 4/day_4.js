@@ -156,6 +156,7 @@ function parseWordSearch(string) {
     height: height,
     points: getPoints(height, width),
     vectors: getVectors(),
+    diagonalVectors: getVectors(true),
   };
 }
 
@@ -182,19 +183,20 @@ function getVectors(diagonalsOnly) {
   return vectors;
 }
 
-function getStrings(stringToMatch, wordSearch) {
+function getWordsAndPointsList(wordToMatch, wordSearch, diagonalsOnly = false) {
   const ws = wordSearch;
   const matches = [];
+  const vectors = diagonalsOnly ? ws.diagonalVectors : ws.vectors;
   for (const point of ws.points) {
-    for (const vector of ws.vectors) {
+    for (const v of vectors) {
       const params = {
         point: point,
-        vector: vector,
+        vector: v,
         wordSearch: ws,
-        stringLength: stringToMatch.length,
+        stringLength: wordToMatch.length,
       };
       const stringData = getCharsAndPointsWithVector(params);
-      if (stringData.length === stringToMatch.length) matches.push(stringData);
+      if (stringData.length === wordToMatch.length) matches.push(stringData);
     }
   }
   return matches;
@@ -225,14 +227,47 @@ function isInRange(point, wordSearch) {
   );
 }
 
-function filterStringMatches(stringList, stringToMatch) {
-  return stringList
-    .map((charsAndPoints) =>
-      charsAndPoints.map((charAndPoint) => charAndPoint[0]).join("")
-    )
-    .filter((string) => string === stringToMatch);
+// wordsAndPointsList format: [ [ [ 'M', 0, 21 ], [ 'S', 1, 22 ], [ 'A', 2, 23 ], [ 'M', 3, 24 ] ] ]
+function filterWordsAndPointsList(wordsAndPointsList, wordToMatch) {
+  return wordsAndPointsList.filter((charsAndPoints) => {
+    const word = charsAndPoints
+      .map((charAndPoints) => charAndPoints[0])
+      .join("");
+    return word === wordToMatch;
+  });
 }
-const wordsearch = parseWordSearch(exampleCase);
-const totalXmas = getStrings("XMAS", wordsearch);
 
-console.log("output:", filterStringMatches(totalXmas, "XMAS").length);
+function getMasCount(masList) {
+  const middleMap = new Map();
+
+  for (const mas of masList) {
+    const middleItem = mas[1]; // index 1 is the middle char in "MAS"
+    const key = `${middleItem[1]},${middleItem[2]}`; // use x,y
+    if (!middleMap.has(key)) {
+      middleMap.set(key, []);
+    }
+    middleMap.get(key).push(mas);
+  }
+
+  let total = 0;
+
+  for (const mases of middleMap.values()) {
+    if (mases.length > 1) {
+      total += 1;
+    }
+  }
+  return total;
+}
+
+const wordsearch = parseWordSearch(exampleCase);
+const fourLetterWords = getWordsAndPointsList("XMAS", wordsearch);
+
+console.log(
+  "output1:",
+  filterWordsAndPointsList(fourLetterWords, "XMAS").length
+);
+
+const threeLetterWords = getWordsAndPointsList("MAS", wordsearch, true);
+const masList = filterWordsAndPointsList(threeLetterWords, "MAS");
+const mascount = getMasCount(masList);
+console.log("output2:", mascount);
