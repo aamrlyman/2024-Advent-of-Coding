@@ -1,4 +1,4 @@
-mainTestCase = """
+const exampleCase = `
 MASAMXMSSXXMAMXXMXMASXMASXMMSMSMMMAXMASASMMSSMSXAXMASMMSMMMSSMSASMSSSSMSMSMXXMXMAXAMXMSMSSXSAMXMSSXSXSXMASXMSASXMMXSXMSSSSSXSAMMAMXSXXMAAXSA
 MASMMXMASAXASMSMMMSAMXSMSAMXAAAAAXAMXASXAMAAAAMMSMMMMMASXAAAAMMAMAMMASAAAAXMXMSSSSSSMMSAMAXAXXSMAMSAMXASAXXASAMXASAMAXXMASAAAMAMAXXMASXSXSXS
 MMXAXMMMSXMAMAAXAAXAAAXXSMMSMSMSMXAXMXSMMMMSSMXAMXAAXMAMMMMSSMMAMAMMAMMMMMXSAAXAAMMAXXSAMXMSMAXMAMSMSSXMASMMMSXSXMAXMMSMMMMMMSASMSXMAMAXXSAM
@@ -139,125 +139,151 @@ MXMAXAMSMMMMXSAXAXSAAXXAAMSASAMXSAMXMAXAAMSXMMSMASXXAMMMXMASMSMMAXXMMMAAXXMXAXMA
 MAMMMMMAXMASMMMSMMSMSSMMMMSAMASMMMSASXSSMMSASAMMAMXSASAXXAAXAMXSASXMSSSMSASMSAMMMSMMXSASAAASAMXXXMMAMXASMXMMSASMMSSSMSMSMMSMMMMMMAMSMSSSMSXS
 SXSAAXSASXXSASAMXMSAAMAAMMMXMAXMAMSAAAXMAXSAMASMASAMASMSXXMSAMXMMSAAMAAMSXXAMMMAAMASMSASMMMSAMASXSMASMMSAXSASXMASAAMAMXAAXMAXMAMMAMXAAAAASAM
 SASMSMMSAMXSAMXSMXMMMSSMSXSSMSSSXMMXMAMMMMMAMAMXXSAMXMAXXXXSAMXSXSMMMMMMXXMSMSSMSSXMMMAMXMMSAMXXAXSMMXXMMMMASXSSMMSMSMSSSMSMMASXSMSMMMSMMMSM
-"""
-from typing import Iterator
-from itertools import zip_longest, islice
-from collections import defaultdict
+`;
 
+interface WordSearch {
+  grid: string[];
+  width: number;
+  height: number;
+  points: Generator<[number, number]>;
+  allVectors: number[][];
+}
 
-class WordSearch:
-    def __init__(self, longString) -> None:
-        self._lines = [line for line in longString.splitlines() if line.strip()]
-        self._height: int = len(self._lines)
-        self._width: int = len(self._lines[0])
-        self._points: Iterator[tuple[int, int]] = (
-            (x, y) for x in range(self._width) for y in range(self._height)
-        )
-        amplitudes = [-1, 0, 1]
-        self.all_vectors = [
-            (i, j) for i in amplitudes for j in amplitudes if i != 0 or j != 0
-        ]
-        self.diagonalsOnly = [
-            (i, j) for i in amplitudes for j in amplitudes if i != 0 and j != 0
-        ]
+function parseWordSearch(string) {
+  const lines = string.trim().split("\n");
+  const height = lines.length;
+  const width = lines[0].length;
+  if (height != width) {
+    throw new Error(
+      `Input string height: ${height} was not the same as width: ${width}.`
+    );
+  }
+  return {
+    grid: lines,
+    width: width,
+    height: height,
+    points: getPoints(height, width),
+    vectors: getVectors(),
+    diagonalVectors: getVectors(true),
+  };
+}
 
-    def get_word_count(self, word_to_match: str):
-        strings = self.get_strings()
-        return sum(
-            1
-            for word in strings
-            if all(
-                x == y
-                for x, y in zip_longest(
-                    islice((char for char, _, _ in word), len(word_to_match)),
-                    iter(word_to_match),
-                )
-            )
-        )
+function* getPoints(
+  height: number,
+  width: number
+): Generator<[number, number]> {
+  const points: Generator<[number, number]> = [];
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      points.push([x, y]);
+    }
+  }
+  yield points;
+}
 
-    def get_mas_list(self, word_to_match):
-        strings_iterable = self.get_strings(all_vectors=False)
-        matches = []
+function getVectors(diagonalsOnly: boolean = false): number[][] {
+  const amplitudes = diagonalsOnly ? [1, -1] : [1, -1, 0];
+  const vectors = [];
+  for (const i of amplitudes) {
+    for (const j of amplitudes) {
+      if (i != 0 || j != 0) {
+        vectors.push([i, j]);
+      }
+    }
+  }
+  return vectors;
+}
 
-        for word in strings_iterable:
-            word_triplet = []
-            for char_and_coordinates in word:
-                word_triplet.append(char_and_coordinates)
-                if len(word_triplet) == len(word_to_match):
-                    break
+function getWordsAndPointsForSetLength(
+  wordToMatch,
+  wordSearch,
+  diagonalsOnly = false
+) {
+  const ws = wordSearch;
+  const nLettersAndPointsList = [];
+  const vectors = diagonalsOnly ? ws.diagonalVectors : ws.vectors;
+  for (const point of ws.points) {
+    for (const v of vectors) {
+      const params = {
+        point: point,
+        vector: v,
+        wordSearch: ws,
+        stringLength: wordToMatch.length,
+      };
+      const lettersWithPoints = getLettersAndPointsWithVector(params);
+      if (lettersWithPoints.length === wordToMatch.length)
+        nLettersAndPointsList.push(lettersWithPoints);
+    }
+  }
+  return nLettersAndPointsList;
+}
 
-            if len(word_triplet) != len(word_to_match):
-                continue
+function getLettersAndPointsWithVector({
+  point,
+  vector,
+  wordSearch,
+  stringLength,
+}) {
+  const stringData = [];
+  let [x, y] = point;
+  let [i, j] = vector;
+  while (isInRange([x, y], wordSearch) & (stringData.length < stringLength)) {
+    const char = wordSearch.grid[y][x];
+    stringData.push([char, x, y]);
+    x += i;
+    y += j;
+  }
+  return stringData;
+}
 
-            chars = [char for char, _, _ in word_triplet]
-            if chars == list(word_to_match):
-                matches.append(word_triplet)
+function isInRange(point, wordSearch) {
+  const [x, y] = point;
+  return (
+    (x < wordSearch.width) & (x >= 0) & ((y < wordSearch.height) & (y >= 0))
+  );
+}
 
-        return matches
+// wordsAndPointsList format: [ [ [ 'M', 0, 21 ], [ 'S', 1, 22 ], [ 'A', 2, 23 ], [ 'M', 3, 24 ] ] ]
+function filterWordsAndPointsList(wordsAndPointsList, wordToMatch) {
+  return wordsAndPointsList.filter((charsAndPoints) => {
+    const word = charsAndPoints
+      .map((charAndPoints) => charAndPoints[0])
+      .join("");
+    return word === wordToMatch;
+  });
+}
 
-    def count_xmas(self):
-        mas_lists = self.get_mas_list("MAS")
-        middle_map = defaultdict(list)
-        for triple in mas_lists:
-            if len(triple) != 3:
-                continue
-            middle_char, middle_x, middle_y = triple[1]
-            middle_map[(middle_x, middle_y)].append(triple)
+function getMasCount(masList) {
+  const middleMap = new Map();
 
-        return sum(1 for v in middle_map.values() if len(v) >= 2)
+  for (const mas of masList) {
+    const middleItem = mas[1]; // index 1 is the middle char in "MAS"
+    const key = `${middleItem[1]},${middleItem[2]}`; // use x,y
+    if (!middleMap.has(key)) {
+      middleMap.set(key, []);
+    }
+    middleMap.get(key).push(mas);
+  }
 
-    def get_strings(self, all_vectors=True) -> Iterator[Iterator[tuple[str, int, int]]]:
-        vectors = self.all_vectors if all_vectors else self.diagonalsOnly
-        return (
-            self.get_string_with_vector((x, y), (i, j))
-            for [x, y] in self._points
-            for [i, j] in vectors
-        )
+  let total = 0;
 
-    def get_string_with_vector(
-        self, point: tuple[int, int], vector: tuple[int, int]
-    ) -> Iterator[tuple[str, int, int]]:
-        [tempy, tempx] = point
-        [i, j] = vector
-        while self.isInRange(tempx, tempy):
-            yield self._lines[tempy][tempx], tempx, tempy
-            tempx += i
-            tempy += j
+  for (const mases of middleMap.values()) {
+    if (mases.length > 1) {
+      total += 1;
+    }
+  }
+  return total;
+}
 
-    def isInRange(self, x: int, y: int):
-        return 0 <= x < self._width and 0 <= y < self._height
+const wordsearch = parseWordSearch(exampleCase);
+const fourLetterWords = getWordsAndPointsForSetLength("XMAS", wordsearch);
 
+console.log(
+  "output1:",
+  filterWordsAndPointsList(fourLetterWords, "XMAS").length
+);
 
-testCase3 = """
-M.S
-.A.
-M.S"""
-simpleCase = WordSearch(testCase3).count_xmas()
-
-testCase1 = """
-.M.S......
-..A..MSMS.
-.M.S.MAA..
-..A.ASMSM.
-.M.S.M....
-..........
-S.S.S.S.S.
-.A.A.A.A..
-M.M.M.M.M.
-..........
-"""
-
-
-# testAnswer2 = WordSearch(testCase1).get_mas_list("MAS")
-# answer = WordSearch(mainTestCase).get_word_count("XMAS")
-# answer1 = WordSearch(testCase2).get_mas_cout("MAS")
-
-# print("answer: ", answer)
-MainAnswer = WordSearch(mainTestCase).count_xmas()
-print("Main Test Case: ", MainAnswer)
-providedExample = WordSearch(testCase1).count_xmas()
-print("Provided Example: ", providedExample)
-# print(testAnswer2)
-# Answer #1: 2401s
-# Answer #2: 1822s
-print("simple Test Case: ", simpleCase)
+const threeLetterWords = getWordsAndPointsForSetLength("MAS", wordsearch, true);
+const masList = filterWordsAndPointsList(threeLetterWords, "MAS");
+const mascount = getMasCount(masList);
+console.log("output2:", mascount);

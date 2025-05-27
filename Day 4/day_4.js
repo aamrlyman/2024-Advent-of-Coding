@@ -154,7 +154,15 @@ function parseWordSearch(string) {
     grid: lines,
     width: width,
     height: height,
-    points: getPoints(height, width),
+    points: (height, width) => {
+      const points = [];
+      for (let x = 0; x < width; x++) {
+        for (let y = 0; y < height; y++) {
+          points.push([x, y]);
+        }
+      }
+      return points;
+    },
     vectors: getVectors(),
     diagonalVectors: getVectors(true),
   };
@@ -183,9 +191,13 @@ function getVectors(diagonalsOnly) {
   return vectors;
 }
 
-function getWordsAndPointsList(wordToMatch, wordSearch, diagonalsOnly = false) {
+function getWordsAndPointsForSetLength(
+  wordToMatch,
+  wordSearch,
+  diagonalsOnly = false
+) {
   const ws = wordSearch;
-  const matches = [];
+  const nLettersAndPointsList = [];
   const vectors = diagonalsOnly ? ws.diagonalVectors : ws.vectors;
   for (const point of ws.points) {
     for (const v of vectors) {
@@ -195,14 +207,15 @@ function getWordsAndPointsList(wordToMatch, wordSearch, diagonalsOnly = false) {
         wordSearch: ws,
         stringLength: wordToMatch.length,
       };
-      const stringData = getCharsAndPointsWithVector(params);
-      if (stringData.length === wordToMatch.length) matches.push(stringData);
+      const lettersWithPoints = getLettersAndPointsWithVector(params);
+      if (lettersWithPoints.length === wordToMatch.length)
+        nLettersAndPointsList.push(lettersWithPoints);
     }
   }
-  return matches;
+  return nLettersAndPointsList;
 }
 
-function getCharsAndPointsWithVector({
+function getLettersAndPointsWithVector({
   point,
   vector,
   wordSearch,
@@ -260,14 +273,14 @@ function getMasCount(masList) {
 }
 
 const wordsearch = parseWordSearch(exampleCase);
-const fourLetterWords = getWordsAndPointsList("XMAS", wordsearch);
+const fourLetterWords = getWordsAndPointsForSetLength("XMAS", wordsearch);
 
 console.log(
   "output1:",
   filterWordsAndPointsList(fourLetterWords, "XMAS").length
 );
 
-const threeLetterWords = getWordsAndPointsList("MAS", wordsearch, true);
+const threeLetterWords = getWordsAndPointsForSetLength("MAS", wordsearch, true);
 const masList = filterWordsAndPointsList(threeLetterWords, "MAS");
 const mascount = getMasCount(masList);
 console.log("output2:", mascount);
