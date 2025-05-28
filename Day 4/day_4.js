@@ -154,15 +154,7 @@ function parseWordSearch(string) {
     grid: lines,
     width: width,
     height: height,
-    points: (height, width) => {
-      const points = [];
-      for (let x = 0; x < width; x++) {
-        for (let y = 0; y < height; y++) {
-          points.push([x, y]);
-        }
-      }
-      return points;
-    },
+    points: getPoints(height, width),
     vectors: getVectors(),
     diagonalVectors: getVectors(true),
   };
@@ -191,13 +183,13 @@ function getVectors(diagonalsOnly) {
   return vectors;
 }
 
-function getWordsAndPointsForSetLength(
+function getWordsAndPointsOfSetLength(
   wordToMatch,
   wordSearch,
   diagonalsOnly = false
 ) {
   const ws = wordSearch;
-  const nLettersAndPointsList = [];
+  const wordsAndPointsOfSetLength = [];
   const vectors = diagonalsOnly ? ws.diagonalVectors : ws.vectors;
   for (const point of ws.points) {
     for (const v of vectors) {
@@ -207,15 +199,15 @@ function getWordsAndPointsForSetLength(
         wordSearch: ws,
         stringLength: wordToMatch.length,
       };
-      const lettersWithPoints = getLettersAndPointsWithVector(params);
-      if (lettersWithPoints.length === wordToMatch.length)
-        nLettersAndPointsList.push(lettersWithPoints);
+      const stringData = getCharsAndPointsWithVector(params);
+      if (stringData.length === wordToMatch.length)
+        wordsAndPointsOfSetLength.push(stringData);
     }
   }
-  return nLettersAndPointsList;
+  return wordsAndPointsOfSetLength;
 }
 
-function getLettersAndPointsWithVector({
+function getCharsAndPointsWithVector({
   point,
   vector,
   wordSearch,
@@ -224,7 +216,7 @@ function getLettersAndPointsWithVector({
   const stringData = [];
   let [x, y] = point;
   let [i, j] = vector;
-  while (isInRange([x, y], wordSearch) & (stringData.length < stringLength)) {
+  while (isInRange([x, y], wordSearch) && stringData.length < stringLength) {
     const char = wordSearch.grid[y][x];
     stringData.push([char, x, y]);
     x += i;
@@ -235,9 +227,7 @@ function getLettersAndPointsWithVector({
 
 function isInRange(point, wordSearch) {
   const [x, y] = point;
-  return (
-    (x < wordSearch.width) & (x >= 0) & ((y < wordSearch.height) & (y >= 0))
-  );
+  return x < wordSearch.width && x >= 0 && y < wordSearch.height && y >= 0;
 }
 
 // wordsAndPointsList format: [ [ [ 'M', 0, 21 ], [ 'S', 1, 22 ], [ 'A', 2, 23 ], [ 'M', 3, 24 ] ] ]
@@ -273,14 +263,14 @@ function getMasCount(masList) {
 }
 
 const wordsearch = parseWordSearch(exampleCase);
-const fourLetterWords = getWordsAndPointsForSetLength("XMAS", wordsearch);
+const fourLetterWords = getWordsAndPointsOfSetLength("XMAS", wordsearch);
 
 console.log(
   "output1:",
   filterWordsAndPointsList(fourLetterWords, "XMAS").length
 );
 
-const threeLetterWords = getWordsAndPointsForSetLength("MAS", wordsearch, true);
+const threeLetterWords = getWordsAndPointsOfSetLength("MAS", wordsearch, true);
 const masList = filterWordsAndPointsList(threeLetterWords, "MAS");
 const mascount = getMasCount(masList);
 console.log("output2:", mascount);
