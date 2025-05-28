@@ -37,18 +37,16 @@ pageUpdates = """
 
 def getMiddleNumberCount(correctlyOrderedPageUpdates: list[list[int]]) -> int:
     total = 0
+    # print(correctlyOrderedPageUpdates)
     for pageUpdate in correctlyOrderedPageUpdates:
-        if len(pageUpdate) == 1:
-            total += pageUpdate[0]
         if len(pageUpdate) % 2 == 0 and len(pageUpdate) > 0:
             raise Exception(f"pageUpdateList {pageUpdate} has an even number of items")
 
         index = len(pageUpdate) // 2
-        print(index)
-        if index in pageUpdate:
-            total += pageUpdate[index]
-        else:
+        if index >= len(pageUpdate) or index < 0:
             raise Exception(f"{pageUpdate} list had an issue")
+        total += pageUpdate[index]
+
     return total
 
 
@@ -76,26 +74,20 @@ def parseRules(longString: str) -> dict[int, list[int]]:
     return rulesDict
 
 
+def parsePageUpdates(pageUpdates: str) -> list[list[int]]:
+    intList = [
+        [int(s.strip()) for s in line.split(",") if s.strip().isnumeric()]
+        for line in pageUpdates.strip().splitlines()
+        if line.strip() and any(s.strip().isnumeric() for s in line.split(","))
+    ]
+    return intList
+
+
 def parseStringToInt(string: str) -> int:
     if string.isnumeric():
         return int(string)
     else:
         raise Exception(f"{string} is not a number")
-
-
-def parsePageUpdates(pageUpdates: str) -> list[list[int]]:
-    stringsLists = [
-        line.split(",") for line in pageUpdates.splitlines() if line.strip()
-    ]
-    intList = []
-    for stringList in stringsLists:
-        tempList = []
-        for string in stringList:
-            noWhiteSpaceString = string.strip()
-            if noWhiteSpaceString and noWhiteSpaceString.isnumeric():
-                tempList.append(int(noWhiteSpaceString))
-        intList.append(tempList)
-    return intList
 
 
 def isPageUpdateInCorrectOrder(
@@ -124,3 +116,4 @@ print(
         getPageUpdatesThatAreInCorrectOrder(rulesString=rules, pagesString=pages)
     ),
 )
+# 7074
