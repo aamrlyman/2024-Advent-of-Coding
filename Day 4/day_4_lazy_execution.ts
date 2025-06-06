@@ -172,13 +172,11 @@ function* getPoints(
   height: number,
   width: number
 ): Generator<[number, number]> {
-  const points: Generator<[number, number]> = [];
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
-      points.push([x, y]);
+      yield [x, y];
     }
   }
-  yield points;
 }
 
 function getVectors(diagonalsOnly: boolean = false): number[][] {
@@ -195,10 +193,10 @@ function getVectors(diagonalsOnly: boolean = false): number[][] {
 }
 
 function getWordsAndPointsForSetLength(
-  wordToMatch,
-  wordSearch,
-  diagonalsOnly = false
-) {
+  wordToMatch:string,
+  wordSearch:string[][],
+  diagonalsOnly:boolean = false
+):Generator[Generator[tuple[string,number,number]]] {
   const ws = wordSearch;
   const nLettersAndPointsList = [];
   const vectors = diagonalsOnly ? ws.diagonalVectors : ws.vectors;
@@ -219,7 +217,7 @@ function getWordsAndPointsForSetLength(
 }
 
 function getLettersAndPointsWithVector({
-  point,
+  point:,
   vector,
   wordSearch,
   stringLength,
