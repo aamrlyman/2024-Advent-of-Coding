@@ -196,7 +196,7 @@ class WordSearch:
         return matches
 
     def count_xmas(self):
-        mas_lists = self.get_mas_list("MAS")
+        mas_lists = self.get_mas_list("MAS")  # [["M", 1,2],[] []]
         middle_map = defaultdict(list)
         for triple in mas_lists:
             if len(triple) != 3:
